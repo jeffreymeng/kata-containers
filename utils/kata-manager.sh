@@ -454,7 +454,7 @@ check_deps()
 	info "Installing packages '$packages'"
 
 	case "$ID" in
-		centos|rhel) sudo yum -y install $packages ;;
+		ol|centos|rhel) sudo yum -y install $packages ;;
 		debian|ubuntu) sudo apt-get update && sudo apt-get -y install $packages ;;
 		fedora) sudo dnf -y install $packages ;;
 		opensuse*|sles) sudo zypper install -y $packages ;;

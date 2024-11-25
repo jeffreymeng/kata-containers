@@ -739,7 +739,10 @@ EOF
 		ln -sf "${policy_file_name}" "${policy_dir}/default-policy.rego"
 	fi
 
+	prepare_overlay
+
 	info "Check init is installed"
+	echo "init: ${init}"
 	[ -x "${init}" ] || [ -L "${init}" ] || die "/sbin/init is not installed in ${ROOTFS_DIR}"
 	OK "init is installed"
 
@@ -815,9 +818,11 @@ main()
 		#Make sure ROOTFS_DIR is set correctly
 		[ -d "${ROOTFS_DIR}" ] || die "Invalid rootfs directory: '$ROOTFS_DIR'"
 
+		
+
 		# Set the distro for dracut build method
 		detect_host_distro
-		prepare_overlay
+		
 	fi
 
 	init="${ROOTFS_DIR}/sbin/init"

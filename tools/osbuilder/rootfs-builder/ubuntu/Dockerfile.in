@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 ARG IMAGE_REGISTRY=docker.io
-FROM ${IMAGE_REGISTRY}/ubuntu:@OS_VERSION@
+FROM ubuntu
 @SET_PROXY@
 
 ENV GO_HOME="/opt"
@@ -25,8 +25,8 @@ RUN mkdir ${RUSTUP_HOME} ${CARGO_HOME} ${GOCACHE} && \
 # makedev tries to mknod from postinst
 RUN [ -x /usr/bin/systemd-detect-virt ] || ( echo "echo docker" >/usr/bin/systemd-detect-virt && chmod +x /usr/bin/systemd-detect-virt )
 # hadolint ignore=DL3009,SC2046
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive \
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive \
     apt-get --no-install-recommends -y install \
     ca-certificates \
     curl \
@@ -50,23 +50,20 @@ RUN apt-get update && \
     xz-utils \
     pip \
     python3-dev \
-    zstd && \
-    apt-get clean && rm -rf /var/lib/apt/lists/&& \
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain ${RUST_TOOLCHAIN}
+    zstd \
+    clang \
+    libclang-dev
 
-RUN ARCH=$(uname -m); \
-    goarch=""; \
-    kernelname=$(uname -s | tr '[:upper:]' '[:lower:]'); \
-    case "${ARCH}" in \
-        "aarch64") goarch="arm64" ;; \
-        "ppc64le") goarch=${ARCH} ;; \
-        "x86_64") goarch="amd64" ;; \
-        "s390x") goarch=${ARCH} ;; \
-        *) echo "Unsupported architecture: ${ARCH}" && exit 1 ;; \
-    esac; \
-    curl -OL "https://storage.googleapis.com/golang/go${GO_VERSION}.${kernelname}-${goarch}.tar.gz" && \
-    tar -C "${GO_HOME}" -xzf "go${GO_VERSION}.${kernelname}-${goarch}.tar.gz" && \
-    rm "go${GO_VERSION}.${kernelname}-${goarch}.tar.gz"
+RUN apt-get clean
+RUN rm -rf /var/lib/apt/lists/
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.78.0
+
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:longsleep/golang-backports && \
+    apt-get update && \
+    apt-get install -y golang-go
+
 
 # aarch64 requires this name -- link for all
 RUN if [ ! -f "/usr/bin/$(uname -m)-linux-musl-gcc" ]; then ln -s /usr/bin/musl-gcc "/usr/bin/$(uname -m)-linux-musl-gcc"; fi
@@ -83,4 +80,4 @@ RUN ARCH=$(uname -m); \
 	esac; \
     rustup target add "${rust_arch}-unknown-linux-${libc}"
 
-RUN pip install --no-cache-dir pyinstaller==6.9.0
+RUN pip install --no-cache-dir --break-system-packages pyinstaller==6.9.0
